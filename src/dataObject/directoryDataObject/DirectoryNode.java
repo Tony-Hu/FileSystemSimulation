@@ -1,10 +1,10 @@
 package dataObject.directoryDataObject;
 
-public class DirectoryNode {
+import dataObject.AbstractNode;
+
+public class DirectoryNode extends AbstractNode{
 
   private DirectoryInfo[] directoryInfo;
-  private DirectoryNode forward;
-  private DirectoryNode backward;
   private DirectoryNode free;
   private DirectoryNode filler;
 
