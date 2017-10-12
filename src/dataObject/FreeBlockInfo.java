@@ -1,8 +1,9 @@
 package dataObject;
 
-import dataObject.directoryDataObject.DirectoryInfo;
+import dataObject.directoryDataObject.DirectoryNode;
 
 public class FreeBlockInfo {
   private boolean isFree;
-  private DirectoryInfo info;
+  private DirectoryNode node;
+
 }

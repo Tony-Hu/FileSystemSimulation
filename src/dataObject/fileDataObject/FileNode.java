@@ -3,6 +3,7 @@ package dataObject.fileDataObject;
 import dataObject.AbstractNode;
 
 public class FileNode extends AbstractNode {
+
   private char[] data;
 
   public static final int DATA_SIZE = 504;
