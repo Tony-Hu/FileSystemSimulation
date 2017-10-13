@@ -1,6 +1,11 @@
 package dataObject.directoryDataObject;
 
 import dataObject.AbstractNode;
+import util.FileUtil;
+
+import java.util.Arrays;
+
+import static util.FileUtil.MAX_INFO_SIZE;
 
 public class DirectoryNode extends AbstractNode{
 
@@ -8,7 +13,6 @@ public class DirectoryNode extends AbstractNode{
   private DirectoryNode nextFreeNode;
   private DirectoryNode filler;//Unused for this project.
 
-  public static final int MAX_INFO_SIZE = 31;
   public DirectoryNode(){
     initializeDirInfo();
   }
@@ -27,7 +31,7 @@ public class DirectoryNode extends AbstractNode{
     DirectoryNode directory = this;
     do {
       for (DirectoryInfo info : directory.getDirectoryInfo()) {
-        if (name.equals(info.getName()) && info.getType() != 'f') {
+        if (info.haveSameName(name) && info.getType() != 'f') {
           return info;
         }
       }

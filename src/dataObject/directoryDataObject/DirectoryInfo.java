@@ -2,6 +2,8 @@ package dataObject.directoryDataObject;
 
 import dataObject.AbstractNode;
 
+import static util.FileUtil.MAX_NAME_LENGTH;
+
 public class DirectoryInfo {
 
   private char type;
@@ -9,7 +11,6 @@ public class DirectoryInfo {
   private AbstractNode link;
   private byte size;
 
-  public static final int MAX_NAME_LENGTH = 9;
   public DirectoryInfo(){
     type = 'f';
     name = new char[MAX_NAME_LENGTH];
@@ -52,5 +53,20 @@ public class DirectoryInfo {
 
   public void setSize(byte size) {
     this.size = size;
+  }
+
+  public boolean haveSameName(String anotherName){
+    int i = 0;
+    for (; i < anotherName.length() && name[i] != '\u0000';i++){
+      if (anotherName.charAt(i) != name[i]){
+        return false;
+      }
+    }
+    if (i < anotherName.length() || name[i] != '\u0000'){
+      return false;
+    }
+
+
+    return true;
   }
 }

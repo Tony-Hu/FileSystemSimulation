@@ -1,3 +1,5 @@
+package util;
+
 import dataObject.AbstractNode;
 import dataObject.FreeBlockInfo;
 import dataObject.directoryDataObject.DirectoryInfo;
@@ -7,18 +9,20 @@ import dataObject.fileDataObject.FileNode;
 
 public class FileUtil {
 
-  private DirectoryNode[] directoryNodes;
+  private AbstractNode[] sectors;//TODO have bug to register sectors.(Unused)
   private FreeBlockInfo[] freeBlockList;
   private int nextFreePos;
 
   public static final int SECTOR_SIZE = 100;
-
+  public static final int MAX_INFO_SIZE = 31;
+  public static final int MAX_NAME_LENGTH = 9;
+  public static final int DATA_SIZE = 504;
 
   public FileUtil(){
-    directoryNodes = new DirectoryNode[SECTOR_SIZE];
-    directoryNodes[0] = new DirectoryNode();
+    sectors = new DirectoryNode[SECTOR_SIZE];
+    sectors[0] = new DirectoryNode();//Sector 0 always being a dir.
     freeBlockList = new FreeBlockInfo[SECTOR_SIZE];
-    freeBlockList[0] = new FreeBlockInfo(directoryNodes[0]);
+    freeBlockList[0] = new FreeBlockInfo(sectors[0]);
     nextFreePos = 1;
   }
 
@@ -60,36 +64,55 @@ public class FileUtil {
   }
 
   private void create(String type, String name){
-    if (!"u".equals(type) || !"d".equals(type)){
+    if (!"u".equals(type) && !"d".equals(type)){
       System.out.println("Type \"" + type + "\" is invalid. Only \"u\" or \"d\" is allowed");
       return;
     }
 
     String[] paths = name.split("/");
-    DirectoryNode tempPtr = directoryNodes[0];
+    AbstractNode tempPtr = sectors[0];
     for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
-      DirectoryInfo info = tempPtr.seekDir(paths[i]);
-      if (info == null){
-        AbstractNode node = getNextAvailableSector(type.charAt(0));
-        if (!tempPtr.addInfo(type.charAt(0), name, node)){
-
-        }
-
-      } else if (info.getType() == 'u'){
+      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekDir(paths[i]);
+      if (info == null){//If the dir is currently not exist.
+        tempPtr = createNewInfo('d', paths[i], tempPtr);
+      } else if (info.getType() == 'u'){//If already exists a file with same name.
         System.out.println(paths[i] + " already exists as a file. Try another path name again!");
         return;
-      } else {
-
+      } else {//The dir exists.
+        tempPtr = info.getLink();
       }
     }
+    createNewInfo(type.charAt(0), paths[paths.length - 1], tempPtr);
+  }
+
+
+  private AbstractNode createNewInfo(char type, String name, AbstractNode currentDir){
+    if (!(currentDir instanceof DirectoryNode)){//Can't happen. just in case.
+      System.out.println("Current node is not a directory node!");
+      return null;
+    }
+
+    AbstractNode node = getNextAvailableSector(type);
+    DirectoryNode previous;
+    DirectoryNode current = (DirectoryNode) currentDir;
+    do{
+      if (current.addInfo(type, name, node)) {
+        return node;
+      }
+      previous = current;
+      current = (DirectoryNode) currentDir.getForward();
+    } while (current != null);
+
+    DirectoryNode newDirNode = (DirectoryNode) getNextAvailableSector('d');
+    newDirNode.addInfo(type, name, node);
+    previous.setForward(newDirNode);
+
+    return node;
   }
 
 
 
-
-
-
-  public AbstractNode getNextAvailableSector(char type){
+  private AbstractNode getNextAvailableSector(char type){
     int counter = 0;
     for (; counter < SECTOR_SIZE && freeBlockList[nextFreePos] != null && !freeBlockList[nextFreePos].isFree(); counter++){
       nextFreePos++;
