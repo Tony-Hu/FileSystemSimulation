@@ -2,11 +2,11 @@ package dataObject;
 
 import dataObject.directoryDataObject.DirectoryNode;
 
-public class FreeBlockInfo {
+public class SectorInfo {
   private boolean isFree;
   private AbstractNode node;
 
-  public FreeBlockInfo(AbstractNode node){
+  public SectorInfo(AbstractNode node){
     isFree = false;
     this.node = node;
   }

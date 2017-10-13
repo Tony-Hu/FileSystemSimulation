@@ -1,7 +1,7 @@
 package util;
 
 import dataObject.AbstractNode;
-import dataObject.FreeBlockInfo;
+import dataObject.SectorInfo;
 import dataObject.directoryDataObject.DirectoryInfo;
 import dataObject.directoryDataObject.DirectoryNode;
 import dataObject.fileDataObject.FileNode;
@@ -9,8 +9,7 @@ import dataObject.fileDataObject.FileNode;
 
 public class FileUtil {
 
-  private AbstractNode[] sectors;//TODO have bug to register sectors.(Unused)
-  private FreeBlockInfo[] freeBlockList;
+  private SectorInfo[] sectors;
   private int nextFreePos;
 
   public static final int SECTOR_SIZE = 100;
@@ -19,10 +18,8 @@ public class FileUtil {
   public static final int DATA_SIZE = 504;
 
   public FileUtil(){
-    sectors = new DirectoryNode[SECTOR_SIZE];
-    sectors[0] = new DirectoryNode();//Sector 0 always being a dir.
-    freeBlockList = new FreeBlockInfo[SECTOR_SIZE];
-    freeBlockList[0] = new FreeBlockInfo(sectors[0]);
+    sectors = new SectorInfo[SECTOR_SIZE];
+    sectors[0] = new SectorInfo(new DirectoryNode());//Sector 0 always being a dir.
     nextFreePos = 1;
   }
 
@@ -70,7 +67,7 @@ public class FileUtil {
     }
 
     String[] paths = name.split("/");
-    AbstractNode tempPtr = sectors[0];
+    AbstractNode tempPtr = sectors[0].getNode();
     for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
       DirectoryInfo info =  ((DirectoryNode) tempPtr).seekDir(paths[i]);
       if (info == null){//If the dir is currently not exist.
@@ -114,7 +111,7 @@ public class FileUtil {
 
   private AbstractNode getNextAvailableSector(char type){
     int counter = 0;
-    for (; counter < SECTOR_SIZE && freeBlockList[nextFreePos] != null && !freeBlockList[nextFreePos].isFree(); counter++){
+    for (; counter < SECTOR_SIZE && sectors[nextFreePos] != null && !sectors[nextFreePos].isFree(); counter++){
       nextFreePos++;
       nextFreePos %= SECTOR_SIZE;
     }
@@ -123,20 +120,20 @@ public class FileUtil {
       return null;
     }
 
-    if (freeBlockList[nextFreePos] == null){
+    if (sectors[nextFreePos] == null){
       AbstractNode newNode;
       if (type == 'd') {
         newNode = new DirectoryNode();
       } else {
         newNode = new FileNode();
       }
-      freeBlockList[nextFreePos] = new FreeBlockInfo(newNode);
+      sectors[nextFreePos] = new SectorInfo(newNode);
       nextFreePos++;
       nextFreePos %= SECTOR_SIZE;
       return newNode;
     } else {
-      freeBlockList[nextFreePos].setFree(false);
-      AbstractNode node = freeBlockList[nextFreePos].getNode();
+      sectors[nextFreePos].setFree(false);
+      AbstractNode node = sectors[nextFreePos].getNode();
       nextFreePos++;
       nextFreePos %= SECTOR_SIZE;
       return node;
