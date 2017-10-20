@@ -6,11 +6,13 @@ import dataObject.directoryDataObject.DirectoryInfo;
 import dataObject.directoryDataObject.DirectoryNode;
 import dataObject.fileDataObject.FileNode;
 
-
+enum OpenType{input, output, update, closed}
 public class FileUtil {
 
   private SectorInfo[] sectors;
   private int nextFreePos;
+  private FileNode currentOpeningFile;
+  private OpenType openType;
 
   public static final int SECTOR_SIZE = 100;
   public static final int MAX_INFO_SIZE = 31;
@@ -21,6 +23,7 @@ public class FileUtil {
     sectors = new SectorInfo[SECTOR_SIZE];
     sectors[0] = new SectorInfo(new DirectoryNode());//Sector 0 always being a dir.
     nextFreePos = 1;
+    openType = OpenType.closed;
   }
 
   public void parseCommand(String command){
@@ -40,10 +43,14 @@ public class FileUtil {
         }
         break;
       case "open":
-
+        if (splits.length < 3){
+        System.out.println("\"Create\" command too short.\n Syntax: create type name." );
+      } else {
+        open(splits[1], splits[2]);
+      }
         break;
       case "close":
-
+        close();
         break;
       case "read":
 
@@ -79,7 +86,8 @@ public class FileUtil {
         tempPtr = info.getLink();
       }
     }
-    createNewInfo(type.charAt(0), paths[paths.length - 1], tempPtr);
+    currentOpeningFile = (FileNode) createNewInfo(type.charAt(0), paths[paths.length - 1], tempPtr);
+    openType = OpenType.output;
   }
 
 
@@ -106,7 +114,6 @@ public class FileUtil {
 
     return node;
   }
-
 
 
   private AbstractNode getNextAvailableSector(char type){
@@ -137,6 +144,34 @@ public class FileUtil {
       nextFreePos++;
       nextFreePos %= SECTOR_SIZE;
       return node;
+    }
+  }
+
+  private void open(String mode, String name){
+    switch(mode){
+      case "i":
+        openType = OpenType.input;
+        break;
+      case "o":
+        openType = OpenType.output;
+        break;
+      case "u":
+        openType = OpenType.update;
+        break;
+      default:
+        System.out.println("Mode \"" + mode + "\" is invalid. Only \"u\" or \"d\" is allowed");
+        return;
+    }
+
+    String[] paths = name.split("/");
+    //TODO - continue
+
+  }
+
+  private void close(){
+    if (openType != OpenType.closed){
+      currentOpeningFile = null;
+      openType = OpenType.closed;
     }
   }
 }

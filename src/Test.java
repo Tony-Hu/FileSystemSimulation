@@ -8,8 +8,6 @@ public class Test {
     FileUtil fileUtil = new FileUtil();
     fileUtil.parseCommand("create d a");
     fileUtil.parseCommand("create d a/b");
-    fileUtil.parseCommand("create u a/c/b");
-
     System.out.println(1);
   }
 }

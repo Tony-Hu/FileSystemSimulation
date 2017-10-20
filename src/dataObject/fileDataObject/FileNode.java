@@ -12,4 +12,5 @@ public class FileNode extends AbstractNode {
   public FileNode(){
     data = new char[DATA_SIZE];
   }
+
 }
