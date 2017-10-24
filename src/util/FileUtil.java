@@ -68,15 +68,20 @@ public class FileUtil {
   }
 
   private void create(String type, String name){
-    if (!"u".equals(type) && !"d".equals(type)){
-      System.out.println("Type \"" + type + "\" is invalid. Only \"u\" or \"d\" is allowed");
-      return;
+    if ("u".equals(type)){
+      createFile(name);
+    } else if ("d".equals(type)){
+      createDir(name);
+    } else {
+      System.out.println("Invalid type: "+ type);
     }
+  }
 
+  private void createDir(String name){
     String[] paths = name.split("/");
     AbstractNode tempPtr = sectors[0].getNode();
-    for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
-      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekDir(paths[i]);
+    for (int i = 0; i < paths.length && tempPtr != null; i++){
+      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
       if (info == null){//If the dir is currently not exist.
         tempPtr = createNewInfo('d', paths[i], tempPtr);
       } else if (info.getType() == 'u'){//If already exists a file with same name.
@@ -86,10 +91,25 @@ public class FileUtil {
         tempPtr = info.getLink();
       }
     }
-    currentOpeningFile = (FileNode) createNewInfo(type.charAt(0), paths[paths.length - 1], tempPtr);
-    openType = OpenType.output;
   }
 
+  private void createFile(String name){
+    String[] paths = name.split("/");
+    AbstractNode tempPtr = sectors[0].getNode();
+    for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
+      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      if (info == null){//If the dir is currently not exist.
+        tempPtr = createNewInfo('d', paths[i], tempPtr);
+      } else if (info.getType() == 'u'){//If already exists a file with same name.
+        System.out.println(paths[i] + " already exists as a file. Try another path name again!");
+        return;
+      } else {//The dir exists.
+        tempPtr = info.getLink();
+      }
+    }
+    currentOpeningFile = (FileNode) createNewInfo('u', paths[paths.length - 1], tempPtr);
+    openType = OpenType.output;
+  }
 
   private AbstractNode createNewInfo(char type, String name, AbstractNode currentDir){
     if (!(currentDir instanceof DirectoryNode)){//Can't happen. just in case.
@@ -159,12 +179,28 @@ public class FileUtil {
         openType = OpenType.update;
         break;
       default:
-        System.out.println("Mode \"" + mode + "\" is invalid. Only \"u\" or \"d\" is allowed");
+        System.out.println("Mode \"" + mode + "\" is invalid. Only \"u\" or \"o\" or \"i\" is allowed");
         return;
     }
 
     String[] paths = name.split("/");
-    //TODO - continue
+    AbstractNode tempPtr = sectors[0].getNode();
+    for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
+      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      if (info == null || info.getType() != 'd'){
+        System.out.println("Dir " + paths[i] + " does not exist!");
+        openType = OpenType.closed;
+        return;
+      }
+      tempPtr = info.getLink();
+    }
+    DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[paths.length - 1]);
+    if (info == null || info.getType() !='u'){
+      System.out.println("File " + paths[paths.length - 1] + " does not exist!");
+      openType = OpenType.closed;
+      return;
+    }
+    currentOpeningFile = (FileNode) info.getLink();
 
   }
 

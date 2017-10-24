@@ -27,7 +27,7 @@ public class DirectoryNode extends AbstractNode{
   }
 
 
-  public DirectoryInfo seekDir(String name){
+  public DirectoryInfo seekName(String name){
     DirectoryNode directory = this;
     do {
       for (DirectoryInfo info : directory.getDirectoryInfo()) {
