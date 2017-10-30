@@ -13,6 +13,7 @@ public class FileUtil {
   private int nextFreePos;
   private FileNode currentOpeningFile;
   private OpenType openType;
+  private short currentPos;
 
   public static final int SECTOR_SIZE = 100;
   public static final int MAX_INFO_SIZE = 31;
@@ -24,6 +25,7 @@ public class FileUtil {
     sectors[0] = new SectorInfo(new DirectoryNode());//Sector 0 always being a dir.
     nextFreePos = 1;
     openType = OpenType.closed;
+    currentPos = 0;
   }
 
   public void parseCommand(String command){
@@ -44,16 +46,23 @@ public class FileUtil {
         break;
       case "open":
         if (splits.length < 3){
-        System.out.println("\"Create\" command too short.\n Syntax: create type name." );
-      } else {
-        open(splits[1], splits[2]);
-      }
+          System.out.println("\"Create\" command too short.\n Syntax: create type name." );
+        } else {
+          open(splits[1], splits[2]);
+        }
         break;
       case "close":
         close();
         break;
+      case "delete":
+        if (splits.length < 2){
+          System.out.println("\"delete\" command too short.\n Syntax: delete name." );
+        } else {
+          delete(splits[1]);
+        }
+        break;
       case "read":
-
+        
         break;
       case "write":
 
@@ -107,6 +116,7 @@ public class FileUtil {
         tempPtr = info.getLink();
       }
     }
+    //TODO - implements delete and recreate if file already exists
     currentOpeningFile = (FileNode) createNewInfo('u', paths[paths.length - 1], tempPtr);
     openType = OpenType.output;
   }
@@ -201,13 +211,37 @@ public class FileUtil {
       return;
     }
     currentOpeningFile = (FileNode) info.getLink();
-
+    byte size = info.getSize();
+    placePointer(size);
   }
 
+  private void placePointer(byte size){
+    switch(openType){
+      case input:
+      case update:
+        currentPos = 0;
+        break;
+      case output:
+        while (currentOpeningFile.getForward() != null){
+          currentOpeningFile = (FileNode) currentOpeningFile.getForward();
+        }
+        currentPos = size;
+      break;
+      default:
+        //Usually can't happen
+        System.out.println("File already closed! Meet an error!");
+        return;
+    }
+  }
   private void close(){
     if (openType != OpenType.closed){
       currentOpeningFile = null;
       openType = OpenType.closed;
     }
+  }
+
+  private void delete(String fileName){
+    String[] paths = fileName.split("/");
+    //TODO - finish this part
   }
 }
