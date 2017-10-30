@@ -1,6 +1,10 @@
 # Commands
 Each command that may be processed by the file system is matched by an input command line. The syntax of these command lines, and the processing to be performed, is as follows:
-<br><span style="color:red">the commands are NOT case sensitive</span><br>
+<br>
+```html
+<span style="color:red">the commands are NOT case sensitive</span>
+```
+<br>
 **1. CREATE type name**<br>
 
 **2. OPEN mode name**<br>
