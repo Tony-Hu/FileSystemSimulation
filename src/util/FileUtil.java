@@ -62,7 +62,7 @@ public class FileUtil {
         }
         break;
       case "read":
-        
+
         break;
       case "write":
 
@@ -242,6 +242,15 @@ public class FileUtil {
 
   private void delete(String fileName){
     String[] paths = fileName.split("/");
+    AbstractNode tempPtr = sectors[0].getNode();
+    for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
+      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      if (info == null || info.getType() != 'd'){
+        System.out.println("Dir " + paths[i] + " does not exist! File deletion failed!");
+        return;
+      }
+    }
+    
     //TODO - finish this part
   }
 }
