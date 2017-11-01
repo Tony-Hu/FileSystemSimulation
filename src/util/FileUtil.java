@@ -139,6 +139,7 @@ public class FileUtil {
     } while (current != null);
 
     DirectoryNode newDirNode = (DirectoryNode) getNextAvailableSector('d');
+    newDirNode.setBack(previous);
     newDirNode.addInfo(type, name, node);
     previous.setForward(newDirNode);
 
@@ -250,7 +251,7 @@ public class FileUtil {
         return;
       }
     }
-    
+
     //TODO - finish this part
   }
 }
