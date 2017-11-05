@@ -9,8 +9,8 @@ import dataObject.fileDataObject.FileNode;
 enum OpenType{input, output, update, closed}
 public class FileUtil {
 
-  private SectorInfo[] sectors;
-  private int nextFreePos;
+
+  private SectorsUtil sectors;
   private FileNode currentOpeningFile;
   private OpenType openType;
   private short currentPos;
@@ -21,9 +21,7 @@ public class FileUtil {
   public static final int DATA_SIZE = 504;
 
   public FileUtil(){
-    sectors = new SectorInfo[SECTOR_SIZE];
-    sectors[0] = new SectorInfo(new DirectoryNode());//Sector 0 always being a dir.
-    nextFreePos = 1;
+    sectors = new SectorsUtil();
     openType = OpenType.closed;
     currentPos = 0;
   }
@@ -46,7 +44,7 @@ public class FileUtil {
         break;
       case "open":
         if (splits.length < 3){
-          System.out.println("\"Create\" command too short.\n Syntax: create type name." );
+          System.out.println("\"Open\" command too short.\n Syntax: open mode name." );
         } else {
           open(splits[1], splits[2]);
         }
@@ -74,6 +72,9 @@ public class FileUtil {
         System.out.println(("Invalid argument: " + splits[0]));
         break;
     }
+    System.out.println("The command is:" + command);
+    System.out.println("\nThe Sector looks like this: ");
+    System.out.println(display());
   }
 
   private void create(String type, String name){
@@ -88,9 +89,9 @@ public class FileUtil {
 
   private void createDir(String name){
     String[] paths = name.split("/");
-    AbstractNode tempPtr = sectors[0].getNode();
+    SectorInfo tempPtr = sectors.getSectorZero();
     for (int i = 0; i < paths.length && tempPtr != null; i++){
-      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      DirectoryInfo info =  ((DirectoryNode) tempPtr.getNode()).seekName(paths[i]);
       if (info == null){//If the dir is currently not exist.
         tempPtr = createNewInfo('d', paths[i], tempPtr);
       } else if (info.getType() == 'u'){//If already exists a file with same name.
@@ -104,9 +105,9 @@ public class FileUtil {
 
   private void createFile(String name){
     String[] paths = name.split("/");
-    AbstractNode tempPtr = sectors[0].getNode();
+    SectorInfo tempPtr = sectors.getSectorZero();
     for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
-      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      DirectoryInfo info =  ((DirectoryNode) tempPtr.getNode()).seekName(paths[i]);
       if (info == null){//If the dir is currently not exist.
         tempPtr = createNewInfo('d', paths[i], tempPtr);
       } else if (info.getType() == 'u'){//If already exists a file with same name.
@@ -116,67 +117,54 @@ public class FileUtil {
         tempPtr = info.getLink();
       }
     }
-    //TODO - implements delete and recreate if file already exists
-    currentOpeningFile = (FileNode) createNewInfo('u', paths[paths.length - 1], tempPtr);
+    if (tempPtr == null){
+      System.out.println("No such dir " + paths[paths.length - 2]);
+      return;
+    }
+    if (tempPtr.getNode() == null){
+      System.out.println("No node bind with the sector " + tempPtr);
+      System.out.println("Create file failed!");
+      return;
+    }
+    DirectoryInfo info =  ((DirectoryNode) tempPtr.getNode()).seekName(paths[paths.length - 1]);
+    if (info == null) {//File not exists before
+      currentOpeningFile = (FileNode) createNewInfo('u', paths[paths.length - 1], tempPtr).getNode();
+    } else if (info.getType() == 'u'){//File already exists, recreate it.
+      delete(info);
+      currentOpeningFile = (FileNode) createNewInfo('u', paths[paths.length - 1], tempPtr).getNode();
+    } else if (info.getType() == 'd'){
+      System.out.println("File already exists as a dir. Fail to create file!");
+      return;
+    }
     openType = OpenType.output;
   }
 
-  private AbstractNode createNewInfo(char type, String name, AbstractNode currentDir){
-    if (!(currentDir instanceof DirectoryNode)){//Can't happen. just in case.
+  private SectorInfo createNewInfo(char type, String name, SectorInfo currentDir){
+    if (!(currentDir.getNode() instanceof DirectoryNode)){//Can't happen. just in case.
       System.out.println("Current node is not a directory node!");
       return null;
     }
 
-    AbstractNode node = getNextAvailableSector(type);
-    DirectoryNode previous;
-    DirectoryNode current = (DirectoryNode) currentDir;
+    SectorInfo node = sectors.getNextAvailableSector(type);
+    SectorInfo previous;
+    SectorInfo current = currentDir;
     do{
-      if (current.addInfo(type, name, node)) {
+      if (((DirectoryNode)current.getNode()).addInfo(type, name, node)) {
         return node;
       }
       previous = current;
-      current = (DirectoryNode) currentDir.getForward();
+      current = current.getNode().getForward();
     } while (current != null);
 
-    DirectoryNode newDirNode = (DirectoryNode) getNextAvailableSector('d');
-    newDirNode.setBack(previous);
-    newDirNode.addInfo(type, name, node);
-    previous.setForward(newDirNode);
+    SectorInfo newDirNode = sectors.getNextAvailableSector('d');
+    newDirNode.getNode().setBack(previous);
+    ((DirectoryNode)newDirNode.getNode()).addInfo(type, name, node);
+    previous.getNode().setForward(newDirNode);
 
     return node;
   }
 
 
-  private AbstractNode getNextAvailableSector(char type){
-    int counter = 0;
-    for (; counter < SECTOR_SIZE && sectors[nextFreePos] != null && !sectors[nextFreePos].isFree(); counter++){
-      nextFreePos++;
-      nextFreePos %= SECTOR_SIZE;
-    }
-    if (counter >= SECTOR_SIZE){//If there is no space available
-      System.out.println("The entire disk sector is full!");
-      return null;
-    }
-
-    if (sectors[nextFreePos] == null){
-      AbstractNode newNode;
-      if (type == 'd') {
-        newNode = new DirectoryNode();
-      } else {
-        newNode = new FileNode();
-      }
-      sectors[nextFreePos] = new SectorInfo(newNode);
-      nextFreePos++;
-      nextFreePos %= SECTOR_SIZE;
-      return newNode;
-    } else {
-      sectors[nextFreePos].setFree(false);
-      AbstractNode node = sectors[nextFreePos].getNode();
-      nextFreePos++;
-      nextFreePos %= SECTOR_SIZE;
-      return node;
-    }
-  }
 
   private void open(String mode, String name){
     switch(mode){
@@ -195,9 +183,9 @@ public class FileUtil {
     }
 
     String[] paths = name.split("/");
-    AbstractNode tempPtr = sectors[0].getNode();
+    SectorInfo tempPtr = sectors.getSectorZero();
     for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
-      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      DirectoryInfo info =  ((DirectoryNode) tempPtr.getNode()).seekName(paths[i]);
       if (info == null || info.getType() != 'd'){
         System.out.println("Dir " + paths[i] + " does not exist!");
         openType = OpenType.closed;
@@ -205,15 +193,24 @@ public class FileUtil {
       }
       tempPtr = info.getLink();
     }
-    DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[paths.length - 1]);
+
+    if (tempPtr == null){
+      System.out.println("No such dir " + paths[paths.length - 2]);
+      return;
+    }
+    if (tempPtr.getNode() == null){
+      System.out.println("No node bind with the sector " + tempPtr);
+      System.out.println("Open file failed!");
+      return;
+    }
+    DirectoryInfo info =  ((DirectoryNode) tempPtr.getNode()).seekName(paths[paths.length - 1]);
     if (info == null || info.getType() !='u'){
       System.out.println("File " + paths[paths.length - 1] + " does not exist!");
       openType = OpenType.closed;
       return;
     }
-    currentOpeningFile = (FileNode) info.getLink();
-    byte size = info.getSize();
-    placePointer(size);
+    currentOpeningFile = (FileNode) info.getLink().getNode();
+    placePointer(info.getSize());
   }
 
   private void placePointer(byte size){
@@ -224,14 +221,13 @@ public class FileUtil {
         break;
       case output:
         while (currentOpeningFile.getForward() != null){
-          currentOpeningFile = (FileNode) currentOpeningFile.getForward();
+          currentOpeningFile = (FileNode) currentOpeningFile.getForward().getNode();
         }
         currentPos = size;
       break;
       default:
         //Usually can't happen
         System.out.println("File already closed! Meet an error!");
-        return;
     }
   }
   private void close(){
@@ -243,15 +239,38 @@ public class FileUtil {
 
   private void delete(String fileName){
     String[] paths = fileName.split("/");
-    AbstractNode tempPtr = sectors[0].getNode();
+    SectorInfo tempPtr = sectors.getSectorZero();
     for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++){
-      DirectoryInfo info =  ((DirectoryNode) tempPtr).seekName(paths[i]);
+      DirectoryInfo info =  ((DirectoryNode) tempPtr.getNode()).seekName(paths[i]);
       if (info == null || info.getType() != 'd'){
         System.out.println("Dir " + paths[i] + " does not exist! File deletion failed!");
         return;
+      } else {
+        tempPtr = info.getLink();
       }
     }
-
+    if (tempPtr == null){
+      System.out.println("No such dir " + paths[paths.length - 2]);
+      return;
+    }
+    if (tempPtr.getNode() == null){
+      System.out.println("No node bind with the sector " + tempPtr);
+      System.out.println("Delete file failed!");
+      return;
+    }
+    DirectoryInfo infoToBeDelete = ((DirectoryNode) tempPtr.getNode()).seekName(paths[paths.length - 1]);
+    delete(infoToBeDelete);
     //TODO - finish this part
+  }
+
+
+  private void delete(DirectoryInfo info){
+    info.getLink().setNode(null);
+    info.getLink().setFree(true);
+    info.setType('f');
+  }
+
+  public String display(){
+    return sectors.display();
   }
 }

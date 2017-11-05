@@ -1,5 +1,4 @@
-*.class
-
+*.ini
 *.iml
 .DS_Store
 .idea/.DS_Store
@@ -10,3 +9,5 @@ out/production/.DS_Store
 out/production/FileSystem/.DS_Store
 src/.DS_Store
 src/dataObject/.DS_Store
+out/
+*.jpg

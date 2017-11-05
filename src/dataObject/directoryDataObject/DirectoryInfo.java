@@ -1,6 +1,9 @@
 package dataObject.directoryDataObject;
 
 import dataObject.AbstractNode;
+import dataObject.SectorInfo;
+
+import java.util.Arrays;
 
 import static util.FileUtil.MAX_NAME_LENGTH;
 
@@ -8,7 +11,7 @@ public class DirectoryInfo {
 
   private char type;
   private char[] name;
-  private AbstractNode link;
+  private SectorInfo link;
   private byte size;
 
   public DirectoryInfo(){
@@ -16,7 +19,7 @@ public class DirectoryInfo {
     name = new char[MAX_NAME_LENGTH];
   }
 
-  public void setInfo(char type, String name, AbstractNode link){
+  public void setInfo(char type, String name, SectorInfo link){
     this.type = type;
     this.name = new char[MAX_NAME_LENGTH];
     System.arraycopy(name.toCharArray(), 0, this.name, 0, Math.min(name.length(), MAX_NAME_LENGTH));
@@ -36,14 +39,14 @@ public class DirectoryInfo {
   }
 
   public void setName(char[] name) {
-    this.name = name;
+    this.name = name;//TODO rewrite this part
   }
 
-  public AbstractNode getLink() {
+  public SectorInfo getLink() {
     return link;
   }
 
-  public void setLink(AbstractNode link) {
+  public void setLink(SectorInfo link) {
     this.link = link;
   }
 
@@ -62,11 +65,12 @@ public class DirectoryInfo {
         return false;
       }
     }
-    if (i < anotherName.length() || name[i] != '\u0000'){
-      return false;
-    }
+    return i >= anotherName.length() && name[i] == '\u0000';
+  }
 
-
-    return true;
+  @Override
+  public String toString() {
+    return String.valueOf(type) + "\t\t" + String.valueOf(name) + "\t\t" +
+        link + "\t\t" + size;
   }
 }

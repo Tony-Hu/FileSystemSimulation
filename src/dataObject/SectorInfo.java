@@ -1,6 +1,5 @@
 package dataObject;
 
-import dataObject.directoryDataObject.DirectoryNode;
 
 public class SectorInfo {
   private boolean isFree;
@@ -9,6 +8,11 @@ public class SectorInfo {
   public SectorInfo(AbstractNode node){
     isFree = false;
     this.node = node;
+  }
+
+  public SectorInfo(){
+    isFree = true;
+    node = null;
   }
 
   public boolean isFree() {
@@ -25,5 +29,15 @@ public class SectorInfo {
 
   public void setNode(AbstractNode node) {
     this.node = node;
+  }
+
+
+  public String display() {
+    return String.valueOf(isFree) + "\t" + node;
+  }
+
+  @Override
+  public String toString() {
+    return super.toString().split("\\.")[1];
   }
 }

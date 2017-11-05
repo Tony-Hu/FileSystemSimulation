@@ -1,22 +1,24 @@
 package dataObject;
 
-public class AbstractNode {
-  private AbstractNode back;
-  private AbstractNode forward;
+public abstract class AbstractNode {
+  private SectorInfo back;
+  private SectorInfo forward;
 
-  public AbstractNode getBack() {
+  public SectorInfo getBack() {
     return back;
   }
 
-  public void setBack(AbstractNode back) {
+  public void setBack(SectorInfo back) {
     this.back = back;
   }
 
-  public AbstractNode getForward() {
+  public SectorInfo getForward() {
     return forward;
   }
 
-  public void setForward(AbstractNode forward) {
+  public void setForward(SectorInfo forward) {
     this.forward = forward;
   }
+
+  public abstract String display();
 }
