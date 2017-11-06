@@ -12,7 +12,7 @@ public class DirectoryInfo {
   private char type;
   private char[] name;
   private SectorInfo link;
-  private byte size;
+  private short size;
 
   public DirectoryInfo(){
     type = 'f';
@@ -34,8 +34,12 @@ public class DirectoryInfo {
     this.type = type;
   }
 
-  public char[] getName() {
-    return name;
+  public String getName() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < MAX_NAME_LENGTH && name[i] != '\u0000'; i++){
+      sb.append(name[i]);
+    }
+    return sb.toString();
   }
 
   public void setName(char[] name) {
@@ -50,11 +54,11 @@ public class DirectoryInfo {
     this.link = link;
   }
 
-  public byte getSize() {
+  public short getSize() {
     return size;
   }
 
-  public void setSize(byte size) {
+  public void setSize(short size) {
     this.size = size;
   }
 

@@ -14,7 +14,7 @@ public class FileUtil {
   private DirectoryInfo currentOpeningFileInfo;
   private FileNode currentOpeningFile;
   private OpenType openType;
-  private short currentPos;
+  private int currentOffset;
 
   public static final int SECTOR_SIZE = 100;
   public static final int MAX_INFO_SIZE = 31;
@@ -24,7 +24,7 @@ public class FileUtil {
   public FileUtil() {
     sectors = new SectorsUtil();
     openType = OpenType.closed;
-    currentPos = 0;
+    currentOffset = 0;
   }
 
   public void parseCommand(String command) {
@@ -78,7 +78,12 @@ public class FileUtil {
         }
         break;
       case "seek":
-
+        if (splits.length < 3) {
+          System.out.println("\"Seek\" command too short.\n Syntax: seek base offset.");
+        } else {
+          seek(splits[1], splits[2]);
+          //displaySectors(command);
+        }
         break;
       default:
         System.out.println(("Invalid argument: " + splits[0]));
@@ -226,21 +231,18 @@ public class FileUtil {
       return;
     }
     currentOpeningFileInfo = info;
-    currentOpeningFile = (FileNode) info.getLink().getNode();
+
     placeFilePointer(info.getSize());
   }
 
-  private void placeFilePointer(byte size) {
+  private void placeFilePointer(short size) {
     switch (openType) {
       case input:
       case update:
-        currentPos = 0;
+        reWind();
         break;
       case output:
-        while (currentOpeningFile.getForward() != null && currentOpeningFile.getForward().getNode() != null) {
-          currentOpeningFile = (FileNode) currentOpeningFile.getForward().getNode();
-        }
-        currentPos = size;
+        locAtEndOfFile();
         break;
       default:
         //Usually can't happen
@@ -288,7 +290,7 @@ public class FileUtil {
       System.out.println("Only file can be deleted!");
       return;
     }
-    String fileName = info.getName().toString();
+    String fileName = info.getName();
     SectorInfo sector = info.getLink();
     info.setType('f');
     do {
@@ -313,7 +315,41 @@ public class FileUtil {
 
 
   private void read(String bytes) {
+    if (openType == OpenType.closed){
+      System.out.println("Fail to read file! Already closed!");
+      return;
+    }
+    if (openType == OpenType.output){
+      System.out.println("Fail to read file! Can't do read operation in output mode!");
+      return;
+    }
 
+    int bytesInInt = Integer.parseInt(bytes);
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("Read ").append(bytesInInt).append(" bytes from file ")
+        .append(currentOpeningFileInfo.getName()).append("\n");
+    do {
+      if (DATA_SIZE - currentOffset >= bytesInInt){
+        int newPos = currentOffset + bytesInInt;
+        sb.append(currentOpeningFile.read(currentOffset, newPos));
+        currentOffset = newPos;
+        bytesInInt = 0;
+      } else {
+        sb.append(currentOpeningFile.read(currentOffset, DATA_SIZE));
+        int bytesRead = DATA_SIZE - currentOffset;
+        bytesInInt -= bytesRead;
+        if (currentOpeningFile.getForward() != null && currentOpeningFile.getForward().getNode() != null) {
+          currentOpeningFile = (FileNode) currentOpeningFile.getForward().getNode();
+          currentOffset = 0;
+        } else {
+          System.out.println(bytesInInt + " bytes left. No further file sectors for reading!");
+          currentOffset = DATA_SIZE;
+          break;
+        }
+      }
+    } while (bytesInInt > 0);
+    System.out.println(sb.toString());
   }
 
   private void write(String bytes, String data) {
@@ -339,17 +375,22 @@ public class FileUtil {
     int i = 0;
     SectorInfo currentFileSector = currentOpeningFileInfo.getLink();
     do {
-      if (DATA_SIZE -currentPos >= bytesInInt){
+      if (DATA_SIZE -currentOffset >= bytesInInt){
         int length = Math.min(data.length(), bytesInInt);
-        currentOpeningFile.writeData(currentPos, data.substring(i, i + length));
-        currentPos += length;
+        currentOpeningFile.writeData(currentOffset, data.substring(i, i + length));
+        currentOffset += length;
         bytesInInt = 0;
-        currentOpeningFileInfo.setSize((byte)currentPos);
+        currentOpeningFileInfo.setSize((short)currentOffset);
       } else {
-        int bytesToBeWritten = DATA_SIZE - currentPos;
-        currentOpeningFile.writeData(currentPos, data.substring(i, i + bytesToBeWritten));
+        int bytesToBeWritten = DATA_SIZE - currentOffset;
+        currentOpeningFile.writeData(currentOffset, data.substring(i, i + bytesToBeWritten));
         try {
-          SectorInfo newFileSector = sectors.getNextAvailableSector('u');
+          SectorInfo newFileSector;
+          if (currentOpeningFile.getForward() != null){
+            newFileSector = currentOpeningFile.getForward();
+          } else {
+            newFileSector = sectors.getNextAvailableSector('u');
+          }
           currentOpeningFile.setForward(newFileSector);
           newFileSector.getNode().setBack(currentFileSector);
           currentFileSector = newFileSector;
@@ -360,9 +401,75 @@ public class FileUtil {
           System.out.println("Disk is full!");
           return;
         } finally {
-          currentPos = 0;
+          currentOffset = 0;
         }
       }
     } while (bytesInInt > 0);
+  }
+
+
+  private void seek(String base, String offset){
+    if (openType == OpenType.closed){
+      System.out.println("File closed! Nothing to seek.");
+      return;
+    }
+    switch(base){
+      case "-1":
+        reWind();
+        break;
+      case "0":
+        int offsetInInt = Integer.parseInt(offset);
+        moveCurrentOffset(offsetInInt);
+        break;
+      case "1":
+        locAtEndOfFile();
+        break;
+      default:
+        System.out.println("Invalid base set: " + base);
+    }
+  }
+  
+  private void reWind(){
+    currentOpeningFile = (FileNode) currentOpeningFileInfo.getLink().getNode();
+    currentOffset = 0;
+  }
+  
+  private void locAtEndOfFile(){
+    while (currentOpeningFile.getForward() != null && currentOpeningFile.getForward().getNode() != null) {
+      currentOpeningFile = (FileNode) currentOpeningFile.getForward().getNode();
+    }
+    currentOffset = currentOpeningFileInfo.getSize();
+  }
+  
+  private void moveCurrentOffset(int offset){
+    int newOffset = currentOffset + offset;
+    if (newOffset >=0 && newOffset < DATA_SIZE){
+      currentOffset = newOffset;
+    } else if (newOffset < 0){//Move backward several sector(s)
+      SectorInfo currentInfo = currentOpeningFile.getBack();
+      while (newOffset < -DATA_SIZE){
+        if (currentInfo == null || currentInfo.getNode() == null || currentInfo.getNode().getBack() == null){
+          System.out.println("Move more than the sector has! Move to the head of file.");
+          newOffset = 1;
+          break;
+        }
+        currentInfo = currentInfo.getNode().getBack();
+        newOffset += DATA_SIZE;
+      }
+      currentOffset = newOffset > 0 ? 0 : DATA_SIZE + newOffset;
+      currentOpeningFile = currentInfo == null ? currentOpeningFile : (FileNode) currentInfo.getNode();
+    } else {//Move forward several sector(s)
+      SectorInfo currentInfo = currentOpeningFileInfo.getLink();
+      while (newOffset > DATA_SIZE){
+        if (currentInfo.getNode() == null || currentInfo.getNode().getForward() == null){
+          System.out.println("Move more than the sector has! Move to the end of file.");
+          newOffset = -1;
+        }
+        currentInfo = currentInfo.getNode().getBack();
+        newOffset -= DATA_SIZE;
+      }
+      currentOffset = newOffset < 0 ? currentOpeningFileInfo.getSize() : newOffset;
+      currentOpeningFile = (FileNode) currentInfo.getNode();
+    }
   }
 }

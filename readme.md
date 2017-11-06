@@ -31,6 +31,3 @@ If it is impossible to write "n" bytes(because the disk is full) then an appropr
 "base" is either -1, 0, or +1 indicating the beginning of the file, the current position in the file, or the end of file. <br>
 "offset" is a signed integer indicating the number of bytes from the "base" that the file pointer should be moved.<br>
 For example, **"SEEK -1 0"** is equivalent to a rewind, **"SEEK +1 0"** is equivalent to a position to end of file, and **"SEEK 0 -5"** positions the file pointer backward by five bytes.
-
-$`\lambda`$
-$\lambda$
