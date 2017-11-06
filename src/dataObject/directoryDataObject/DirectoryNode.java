@@ -60,21 +60,20 @@ public class DirectoryNode extends AbstractNode{
     }
   }
 
-  public boolean addInfo(char type, String name, SectorInfo link){
+  public DirectoryInfo addInfo(char type, String name, SectorInfo link){
     for (int i = 0; i < MAX_INFO_SIZE; i++){
       if (directoryInfo[i].getType() == 'f'){
         directoryInfo[i].setInfo(type, name, link);
-        return true;
+        return directoryInfo[i];
       }
     }
-    return false;
+    return null;
   }
 
   @Override
   public String display() {
     StringBuilder sb = new StringBuilder();
-    sb.append("Forward: ").append(getForward()).append("\n");
-    sb.append("Backward: ").append(getBack()).append("\n");
+    sb.append(super.display());
     sb.append("Free: ").append(getNextFreeNode()).append("\n");
     sb.append("\n");
     sb.append("#").append("\t").append("type").append("\t").append("name").append("\t")

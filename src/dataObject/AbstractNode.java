@@ -1,6 +1,6 @@
 package dataObject;
 
-public abstract class AbstractNode {
+public class AbstractNode {
   private SectorInfo back;
   private SectorInfo forward;
 
@@ -20,5 +20,10 @@ public abstract class AbstractNode {
     this.forward = forward;
   }
 
-  public abstract String display();
+  public String display(){
+    StringBuilder sb = new StringBuilder();
+    sb.append("Forward: ").append(forward).append("\n");
+    sb.append("Backward: ").append(back).append("\n");
+    return sb.toString();
+  }
 }

@@ -27,7 +27,7 @@ public class SectorsUtil {
   }
 
 
-  public SectorInfo getNextAvailableSector(char type){
+  public SectorInfo getNextAvailableSector(char type) throws DiskFullException {
     SectorInfo newInfo = sectors[findNextAvailableSector()];
     newInfo.setFree(false);
     AbstractNode newNode;
@@ -41,7 +41,7 @@ public class SectorsUtil {
     return ((DirectoryNode)sectors[0].getNode()).getNextFreeNode();
   }
 
-  private int findNextAvailableSector(){
+  private int findNextAvailableSector() throws DiskFullException {
     int counter = 0;
     for (; counter < SECTOR_SIZE && !sectors[nextFreePos].isFree(); counter++){
       nextFreePos++;
@@ -49,7 +49,7 @@ public class SectorsUtil {
     }
     if (counter >= SECTOR_SIZE){//If there is no space available
       System.out.println("The entire disk sectors are full!");
-      return -1;
+      throw new DiskFullException();
     }
 
     return nextFreePos;
