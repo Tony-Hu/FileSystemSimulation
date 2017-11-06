@@ -28,6 +28,7 @@ This command causes the first "n" ata bytes from 'data'(actually enclosed in sin
 If fewer than "n" bytes are given, then append sufficient blanks to 'data' to make "n" bytes.<br>
 If it is impossible to write "n" bytes(because the disk is full) then an appropriate message should be issued, but the command should be otherwise treated as if the largest possible value o "n" was specified. (That is, the remaining available disk space should be filled.)<br><br>
 **7. SEEK base offset**<br>
-"base" is either -1, 0, or +1 indicating the beginning of the file, the current position in the file, or the end of file. <br>
+"base":
+-1 0, or +1 indicating the beginning of the file, the current position in the file, or the end of file. <br>
 "offset" is a signed integer indicating the number of bytes from the "base" that the file pointer should be moved.<br>
 For example, **"SEEK -1 0"** is equivalent to a rewind, **"SEEK +1 0"** is equivalent to a position to end of file, and **"SEEK 0 -5"** positions the file pointer backward by five bytes.

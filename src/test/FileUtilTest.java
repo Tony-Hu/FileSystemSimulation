@@ -162,7 +162,7 @@ class FileUtilTest {
     fileUtil.parseCommand("write 3 " + generateRandomFileData(3));
   }
 
-  
+
   @Test
   void testSimpleMoveToOffset(){
     FileUtil fileUtil = new FileUtil();
