@@ -1,6 +1,5 @@
 package util;
 
-import dataObject.AbstractNode;
 import dataObject.SectorInfo;
 import dataObject.directoryDataObject.DirectoryInfo;
 import dataObject.directoryDataObject.DirectoryNode;
@@ -272,5 +271,14 @@ public class FileUtil {
 
   public String display(){
     return sectors.display();
+  }
+
+
+  private void read(String bytes){
+
+  }
+
+  private void write(String bytes, String data){
+
   }
 }
