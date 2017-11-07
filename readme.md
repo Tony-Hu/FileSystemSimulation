@@ -1,4 +1,5 @@
 # Look from sketch
+![skectch](https://github.com/Tony-Hu/FileSystemSimulation/blob/master/sketch.png?raw=true)
 # Commands
 
 ## Full version
