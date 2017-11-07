@@ -74,7 +74,7 @@ public class DirectoryInfo {
 
   @Override
   public String toString() {
-    return String.valueOf(type) + "\t\t" + String.valueOf(name) + "\t\t" +
+    return String.valueOf(type) + "\t\t" + getName() + "\t\t" +
         link + "\t\t" + size;
   }
 }
