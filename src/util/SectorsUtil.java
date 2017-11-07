@@ -49,6 +49,7 @@ public class SectorsUtil {
     }
     if (counter >= SECTOR_SIZE){//If there is no space available
       System.out.println("The entire disk sectors are full!");
+      ((DirectoryNode)sectors[0].getNode()).setNextFreeNode(null);
       throw new DiskFullException();
     }
 

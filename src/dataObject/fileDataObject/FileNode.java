@@ -47,6 +47,6 @@ public class FileNode extends AbstractNode {
     for (int i = 0; i < data.length && data[i] != '\u0000'; i++){
       sb.append(data[i]);
     }
-    return sb.length() == 0 ? "The file is empty!" : sb.toString();
+    return sb.length() - super.display().length() == 0 ? "The file is empty!" : sb.toString();
   }
 }

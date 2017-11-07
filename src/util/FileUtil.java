@@ -40,8 +40,12 @@ public class FileUtil {
         if (splits.length < 3) {
           System.out.println("\"Create\" command too short.\n Syntax: create type name.");
         } else {
-          create(splits[1], splits[2]);
-          displaySectors(command);
+          try {
+            create(splits[1], splits[2]);
+            displaySectors(command);
+          } catch (DiskFullException e){
+            System.out.println("Disk is full!");
+          }
         }
         break;
       case "open":
@@ -73,8 +77,13 @@ public class FileUtil {
         if (splits.length < 3) {
           System.out.println("\"Write\" command too short.\n Syntax: write n 'data'.");
         } else {
-          write(splits[1], splits[2]);
-          displaySectors(command);
+          try {
+            write(splits[1], splits[2]);
+            displaySectors(command);
+          } catch (DiskFullException e){
+            System.out.println("Disk is full!");
+            currentOffset = 0;
+          }
         }
         break;
       case "seek":
@@ -92,7 +101,7 @@ public class FileUtil {
 
   }
 
-  private void create(String type, String name) {
+  private void create(String type, String name) throws DiskFullException{
     if ("u".equals(type)) {
       createFile(name);
     } else if ("d".equals(type)) {
@@ -102,7 +111,7 @@ public class FileUtil {
     }
   }
 
-  private void createDir(String name) {
+  private void createDir(String name) throws DiskFullException{
     String[] paths = name.split("/");
     SectorInfo tempPtr = sectors.getSectorZero();
     for (int i = 0; i < paths.length && tempPtr != null; i++) {
@@ -115,10 +124,13 @@ public class FileUtil {
       } else {//The dir exists.
         tempPtr = info.getLink();
       }
+      if (tempPtr == null){
+        break;
+      }
     }
   }
 
-  private void createFile(String name) {
+  private void createFile(String name) throws DiskFullException {
     String[] paths = name.split("/");
     SectorInfo tempPtr = sectors.getSectorZero();
     for (int i = 0; i < (paths.length - 1) && tempPtr != null; i++) {
@@ -156,34 +168,29 @@ public class FileUtil {
     openType = OpenType.output;
   }
 
-  private DirectoryInfo createNewInfo(char type, String name, SectorInfo currentDir) {
+  private DirectoryInfo createNewInfo(char type, String name, SectorInfo currentDir) throws DiskFullException {
     if (!(currentDir.getNode() instanceof DirectoryNode)) {//Can't happen. just in case.
       System.out.println("Current node is not a directory node!");
       return null;
     }
 
-    try {
-      SectorInfo node = sectors.getNextAvailableSector(type);
-      SectorInfo previous;
-      SectorInfo current = currentDir;
-      DirectoryInfo result;
-      do {
-        if ((result = ((DirectoryNode) current.getNode()).addInfo(type, name, node)) != null) {
-          return result;
-        }
-        previous = current;
-        current = current.getNode().getForward();
-      } while (current != null);
+    SectorInfo node = sectors.getNextAvailableSector(type);
+    SectorInfo previous;
+    SectorInfo current = currentDir;
+    DirectoryInfo result;
+    do {
+      if ((result = ((DirectoryNode) current.getNode()).addInfo(type, name, node)) != null) {
+        return result;
+      }
+      previous = current;
+      current = current.getNode().getForward();
+    } while (current != null);
 
-      SectorInfo newDirNode = sectors.getNextAvailableSector('d');
-      newDirNode.getNode().setBack(previous);
-      result = ((DirectoryNode) newDirNode.getNode()).addInfo(type, name, node);
-      previous.getNode().setForward(newDirNode);
-      return result;
-    } catch (DiskFullException e){
-      System.out.println("Disk full!");
-      return null;
-    }
+    SectorInfo newDirNode = sectors.getNextAvailableSector('d');
+    newDirNode.getNode().setBack(previous);
+    result = ((DirectoryNode) newDirNode.getNode()).addInfo(type, name, node);
+    previous.getNode().setForward(newDirNode);
+    return result;
   }
 
 
@@ -352,7 +359,7 @@ public class FileUtil {
     System.out.println(sb.toString());
   }
 
-  private void write(String bytes, String data) {
+  private void write(String bytes, String data) throws DiskFullException{
     if (openType == OpenType.closed) {
       System.out.println("No file currently opened! You can't write data.");
       return;
@@ -384,25 +391,19 @@ public class FileUtil {
       } else {
         int bytesToBeWritten = DATA_SIZE - currentOffset;
         currentOpeningFile.writeData(currentOffset, data.substring(i, i + bytesToBeWritten));
-        try {
-          SectorInfo newFileSector;
-          if (currentOpeningFile.getForward() != null){
-            newFileSector = currentOpeningFile.getForward();
-          } else {
-            newFileSector = sectors.getNextAvailableSector('u');
-          }
-          currentOpeningFile.setForward(newFileSector);
-          newFileSector.getNode().setBack(currentFileSector);
-          currentFileSector = newFileSector;
-          currentOpeningFile = (FileNode) newFileSector.getNode();
-          bytesInInt -= bytesToBeWritten;
-          i += bytesToBeWritten;
-        } catch(DiskFullException e){
-          System.out.println("Disk is full!");
-          return;
-        } finally {
-          currentOffset = 0;
+        SectorInfo newFileSector;
+        if (currentOpeningFile.getForward() != null){
+          newFileSector = currentOpeningFile.getForward();
+        } else {
+          newFileSector = sectors.getNextAvailableSector('u');
         }
+        currentOpeningFile.setForward(newFileSector);
+        newFileSector.getNode().setBack(currentFileSector);
+        currentFileSector = newFileSector;
+        currentOpeningFile = (FileNode) newFileSector.getNode();
+        bytesInInt -= bytesToBeWritten;
+        i += bytesToBeWritten;
+        currentOffset = 0;
       }
     } while (bytesInInt > 0);
   }
