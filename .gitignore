@@ -11,3 +11,11 @@ src/.DS_Store
 src/dataObject/.DS_Store
 out/
 *.jpg
+".idea/Icon\r"
+"Icon\r"
+"src/Icon\r"
+"src/dataObject/Icon\r"
+"src/dataObject/directoryDataObject/Icon\r"
+"src/dataObject/fileDataObject/Icon\r"
+"src/test/Icon\r"
+"src/util/Icon\r"
