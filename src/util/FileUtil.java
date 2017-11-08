@@ -259,11 +259,12 @@ public class FileUtil {
 
   private void close() {
     if (openType != OpenType.closed) {
+      System.out.println("File " + currentOpeningFileInfo.getName() + " close successful!");
       currentOpeningFileInfo = null;
       currentOpeningFile = null;
       openType = OpenType.closed;
     }
-    System.out.println("File " + currentOpeningFileInfo.getName() + " close successful!");
+
   }
 
   private void delete(String fileName) {

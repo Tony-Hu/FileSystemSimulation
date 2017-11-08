@@ -61,7 +61,8 @@ class FileUtilTest {
         fileUtil.parseCommand("create u " + a + b);
       }
     }
-    fileUtil.parseCommand("write 9999 " + generateSequenceFileData(2048));
+    fileUtil.parseCommand("write 9999 " + generateSequenceFileData(9999));
+    fileUtil.displaySectors("");
   }
 
   String generateRandomFileData(int length){
