@@ -348,7 +348,7 @@ public class FileUtil {
         int bytesRead = DATA_SIZE - currentOffset;
         bytesInInt -= bytesRead;
         if (currentOpeningFile.getForward() != null && currentOpeningFile.getForward().getNode() != null) {
-          currentOpeningFile = (FileNode) currentOpeningFile.getForward().getNode();
+          currentOpeningFile = currentOpeningFile.getForward().getNode();
           currentOffset = 0;
         } else {
           System.out.println(bytesInInt + " bytes left. No further file sectors for reading!");
@@ -401,7 +401,7 @@ public class FileUtil {
         currentOpeningFile.setForward(newFileSector);
         newFileSector.getNode().setBack(currentFileSector);
         currentFileSector = newFileSector;
-        currentOpeningFile = (FileNode) newFileSector.getNode();
+        currentOpeningFile = newFileSector.getNode();
         bytesInInt -= bytesToBeWritten;
         i += bytesToBeWritten;
         currentOffset = 0;
@@ -432,13 +432,13 @@ public class FileUtil {
   }
   
   private void reWind(){
-    currentOpeningFile = (FileNode) currentOpeningFileInfo.getLink().getNode();
+    currentOpeningFile = currentOpeningFileInfo.getLink().getNode();
     currentOffset = 0;
   }
   
   private void locAtEndOfFile(){
     while (currentOpeningFile.getForward() != null && currentOpeningFile.getForward().getNode() != null) {
-      currentOpeningFile = (FileNode) currentOpeningFile.getForward().getNode();
+      currentOpeningFile = currentOpeningFile.getForward().getNode();
     }
     currentOffset = currentOpeningFileInfo.getSize();
   }
@@ -471,7 +471,7 @@ public class FileUtil {
         newOffset -= DATA_SIZE;
       }
       currentOffset = newOffset < 0 ? currentOpeningFileInfo.getSize() : newOffset;
-      currentOpeningFile = (FileNode) currentInfo.getNode();
+      currentOpeningFile = currentInfo.getNode();
     }
   }
 }

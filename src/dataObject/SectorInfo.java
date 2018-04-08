@@ -23,8 +23,8 @@ public class SectorInfo {
     isFree = free;
   }
 
-  public AbstractNode getNode() {
-    return node;
+  public <T extends AbstractNode> T getNode() {
+    return (T)node;
   }
 
   public void setNode(AbstractNode node) {
